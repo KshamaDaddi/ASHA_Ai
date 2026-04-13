@@ -1,0 +1,40 @@
+# ASHA-AI — Dependencies
+# Install: pip install -r requirements.txt
+
+# Core ML / Fine-tuning
+torch>=2.1.0
+unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
+trl>=0.8.0
+peft>=0.10.0
+accelerate>=0.27.0
+bitsandbytes>=0.42.0
+transformers>=4.40.0
+datasets>=2.18.0
+
+# RAG / Vector store
+chromadb>=0.5.0
+sentence-transformers>=2.7.0
+langchain>=0.2.0
+langchain-community>=0.2.0
+
+# PDF loading (for ASHA manual ingestion)
+pymupdf>=1.24.0
+
+# API server
+fastapi>=0.111.0
+uvicorn>=0.29.0
+httpx>=0.27.0
+pydantic>=2.7.0
+python-multipart>=0.0.9
+
+# Demo UI
+gradio>=4.31.0
+
+# Voice input (optional — comment out if not using)
+openai-whisper>=20231117
+
+# Evaluation
+scikit-learn>=1.4.0
+
+# Utilities
+python-dotenv>=1.0.0
