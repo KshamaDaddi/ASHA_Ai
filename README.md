@@ -1,278 +1,263 @@
-# 🏥 ASHA-AI — Offline Multilingual Health Triage for India's Frontline Workers
+# 🏥 ASHA-AI — Offline Multilingual Health Triage Assistant for Rural India
 
-<div align="center">
+<p align="center">
+  <img src="https://img.shields.io/badge/Model-Gemma%203%204B-blue?style=for-the-badge&logo=google" />
+  <img src="https://img.shields.io/badge/Fine--tuned%20with-Unsloth%20%2B%20LoRA-orange?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/RAG-ChromaDB%20%2B%20SentenceTransformers-green?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Languages-12%20Indian%20Languages-purple?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Interface-Gradio-yellow?style=for-the-badge" />
+</p>
 
-![ASHA-AI Banner](https://img.shields.io/badge/Gemma%204-E4B%20Fine--tuned-4285F4?style=for-the-badge&logo=google&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
-![Hackathon](https://img.shields.io/badge/Gemma%204%20Impact%20Challenge-Submission-orange?style=for-the-badge)
-![Offline](https://img.shields.io/badge/Works-100%25%20Offline-brightgreen?style=for-the-badge)
-
-**An edge-deployable, offline-first AI triage assistant for India's 1,006,938 ASHA workers — powered by fine-tuned Gemma 4 E4B**
-
-[🚀 Live Demo](#demo) · [📓 Colab Notebook](#quick-start) · [📄 Hackathon Writeup](#) · [🤗 Model Weights](#)
-
-</div>
+<p align="center">
+  <b>AI-powered health triage for ASHA workers — works offline, speaks your language, and knows when to refer.</b>
+</p>
 
 ---
 
-## 📌 The Problem
+## 📖 Overview
 
-India's **1 million+ ASHA (Accredited Social Health Activist) workers** are the backbone of rural healthcare — visiting homes, triaging patients, managing maternal health, and making real-time clinical decisions in villages far from hospitals.
+**ASHA-AI** is an offline-first, multilingual health triage assistant purpose-built for **ASHA (Accredited Social Health Activist)** workers in rural India. These frontline health workers serve in areas with poor connectivity, limited training resources, and high patient load — often making critical triage decisions alone.
 
-They operate with:
-- ❌ Zero or spotty internet connectivity
-- ❌ Paper-based triage guides (outdated, hard to use)
-- ❌ No AI tools designed for them
-- ❌ Clinical decisions often made in Kannada, Hindi, or Telugu — not English
-
-**A wrong or delayed referral decision can cost a life.**
+ASHA-AI gives them an intelligent second opinion — in their own language — powered by a fine-tuned **Gemma 3 4B** model augmented with a **Retrieval-Augmented Generation (RAG)** pipeline seeded with IMNCI protocols and ASHA training manuals. The system classifies cases as `🚨 EMERGENCY`, `⚠️ REFER`, or `✅ Home Management` with step-by-step numbered guidance, voice output, and medicine-label analysis.
 
 ---
 
-## 💡 The Solution — ASHA-AI
+## 🎯 Problem Statement
 
-ASHA-AI is a **fully offline, multilingual clinical triage assistant** that runs on an Android phone or laptop — no internet required after setup.
+India's 1 million+ ASHA workers are the last line of healthcare in rural communities. They face:
+
+- **No internet connectivity** in many villages
+- **Language barriers** — most AI tools are English-only
+- **Life-critical decisions** with minimal on-call support
+- **Lack of accessible** IMNCI/clinical protocol lookup tools
+
+ASHA-AI addresses all four with a single, deployable application.
+
+---
+
+## ✨ Key Features
 
 | Feature | Description |
-|---------|-------------|
-| 🧠 **Fine-tuned Gemma 4 E4B** | Domain-adapted on ASHA training manuals + IMNCI protocols |
-| 📚 **Offline RAG** | ChromaDB vector store with 12+ ASHA clinical knowledge chunks — no API calls |
-| 🌐 **Multilingual** | Responds in English and Kannada (ಕನ್ನಡ); Whisper for voice input |
-| 📷 **Multimodal** | Medicine label photo → dosage explanation |
-| 🚨 **Triage Classification** | Automatic REFER / HOME / EMERGENCY classification |
-| 📊 **Evaluated** | Precision, recall, F1 on 15 clinical triage scenarios |
+|---|---|
+| 🗣️ **12 Indian Languages** | Kannada, Hindi, Telugu, Tamil, Marathi, Bengali, Gujarati, Malayalam, Punjabi, Odia, Assamese, Urdu |
+| 🔇 **Offline-First** | IndicTrans2 for offline translation; Whisper for on-device speech recognition |
+| 🎙️ **Voice Triage** | Speak symptoms → receive spoken triage guidance |
+| 💊 **Medicine Image Analysis** | OCR a medicine label → get dosage, usage, and safety info |
+| 📋 **RAG-Augmented Responses** | ChromaDB + all-MiniLM-L6-v2 retrieves relevant ASHA manual sections |
+| ⚡ **4-bit Quantisation** | Runs on a single T4 GPU via Unsloth + bitsandbytes |
+| 🔊 **Text-to-Speech** | gTTS outputs audio responses in the selected language |
 
 ---
 
-## 🏆 Hackathon Tracks Targeted
-
-| Track | Prize |
-|-------|-------|
-| Main Track | Up to $50,000 |
-| Health & Sciences Impact | $10,000 |
-| Digital Equity & Inclusivity | $10,000 |
-| Unsloth Special Technology | $10,000 |
-| Ollama Special Technology | $10,000 |
-
----
-
-## 📁 Repository Structure
+## 🧠 Model Architecture
 
 ```
-asha-ai/
-│
-├── 📓 ASHA_AI_Colab.ipynb          ← Run everything in one notebook (Google Colab)
-│
-├── 1_finetune/
-│   ├── prepare_dataset.py           ← Build instruction-tuning dataset
-│   └── finetune_gemma4.py           ← Unsloth LoRA fine-tuning on Gemma 4 E4B
-│
-├── 2_rag/
-│   ├── build_vector_store.py        ← Index ASHA manuals into ChromaDB
-│   └── rag_chain.py                 ← LangChain RAG with local Gemma 4
-│
-├── 3_app/
-│   ├── main.py                      ← FastAPI backend (triage + medcheck + voice)
-│   ├── gradio_demo.py               ← Gradio UI (hackathon live demo)
-│   └── requirements.txt             ← All dependencies
-│
-├── 4_eval/
-│   └── eval_triage.py               ← Precision/Recall evaluation script
-│
-├── data/
-│   └── sample_instructions.jsonl    ← Sample of training data format
-│
-└── README.md
+User Input (text / voice / image)
+        │
+        ▼
+ Language Detection & Translation (IndicTrans2 / Google Translate fallback)
+        │
+        ▼
+ RAG Retrieval ──── ChromaDB (all-MiniLM-L6-v2 embeddings)
+        │               └── ASHA manual chunks (ANC, IMNCI, immunisation, etc.)
+        ▼
+ Fine-tuned Gemma 3 4B (Unsloth + LoRA, 4-bit)
+        │
+        ▼
+ Triage Classification  →  🚨 EMERGENCY / ⚠️ REFER / ✅ Home Management
+        │
+        ▼
+ Translation (→ requested Indian language) + gTTS Audio Output
 ```
 
 ---
 
-## ⚡ Quick Start
+## 🗂️ Clinical Coverage
 
-### Option A — Google Colab (Recommended, zero setup)
+The knowledge base and training data cover the following health domains based on official IMNCI protocols and ASHA training manuals:
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/asha-ai/blob/main/ASHA_AI_Colab.ipynb)
+**Paediatric Emergencies**
+- Severe pneumonia, fast breathing, chest in-drawing
+- Febrile convulsions, general danger signs
+- Severe and moderate dehydration
+- Malnutrition (SAM/MAM via MUAC classification)
 
-1. Click the badge above
-2. Runtime → Change runtime type → **T4 GPU**
-3. Run cells in order (Steps 1–7)
-4. Step 7 generates a public Gradio URL for the live demo
+**Newborn Care**
+- Danger signs in neonates (feeding refusal, jaundice, temperature)
+- Pathological jaundice (< 24 hours)
+- Routine newborn care protocol
 
-### Option B — Local Setup
+**Maternal Health**
+- Pre-eclampsia and eclampsia danger signs
+- Antepartum haemorrhage
+- ANC registration and missed visits
+- Postnatal depression with suicidal ideation
 
-```bash
-# Clone the repo
-git clone https://github.com/YOUR_USERNAME/asha-ai.git
-cd asha-ai
+**Adult Emergencies**
+- Suspected myocardial infarction (heart attack)
+- Stroke recognition and time-critical referral
+- Snake bite first aid
 
-# Install dependencies
-pip install -r 3_app/requirements.txt
-
-# Install Ollama (for local inference)
-# Mac/Linux: curl -fsSL https://ollama.ai/install.sh | sh
-# Then pull Gemma 4:
-ollama pull gemma3:4b
-
-# Build the knowledge base
-python 2_rag/build_vector_store.py
-
-# Start the API server
-uvicorn 3_app.main:app --reload --port 8000
-
-# Launch Gradio demo
-python 3_app/gradio_demo.py
-```
-
----
-
-## 🧪 Model Performance
-
-Evaluated on 15 curated clinical triage scenarios covering paediatric emergencies, maternal health, malnutrition, and adult emergencies.
-
-| Metric | Score |
-|--------|-------|
-| Overall Accuracy | **87%** |
-| REFER Precision | **90%** |
-| REFER Recall | **85%** ← Key clinical metric |
-| REFER F1 | **87%** |
-
-> **Why recall matters:** In clinical triage, a false negative (missing a REFER case) means a patient who needed referral was sent home — potentially fatal. Recall for the REFER class is the primary safety metric.
-
----
-
-## 🏗️ Architecture
-
-```
-ASHA Worker Input (text / voice / image)
-         │
-         ▼
-  [Whisper STT]  ←── Kannada / Hindi voice input
-         │
-         ▼
-  [IndicTrans2]  ←── Kannada → English (for retrieval)
-         │
-         ▼
-  [ChromaDB RAG] ←── Offline ASHA manual knowledge base
-         │
-         ▼
- [Gemma 4 E4B]   ←── Fine-tuned with Unsloth LoRA
-         │
-         ▼
-  [Triage Output]  →  EMERGENCY / REFER / HOME
-         │
-         ▼
-  [IndicTrans2]  ←── English → Kannada (if requested)
-```
-
----
-
-## 📊 Dataset
-
-- **Source:** ASHA training manuals (NHM India), WHO IMNCI protocols, custom clinical scenarios
-- **Format:** Gemma 4 chat template (instruction + system prompt + response)
-- **Size:** 200 unique scenarios × 10 augmentations = 2,000 training examples
-- **Split:** 80% train / 20% eval
-- **Languages:** English (primary), Kannada annotations
+**Prevention & Immunisation**
+- Universal Immunisation Programme (UIP) schedule
+- Malaria RDT testing and ACT treatment
+- Fever differentiation (malaria, dengue, typhoid)
+- JSY/JSSK scheme guidance
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Base model | Gemma 4 E4B (`gemma-3-4b-it`) |
-| Fine-tuning | Unsloth LoRA (rank=16, alpha=32) |
-| Vector DB | ChromaDB (persistent, offline) |
-| Embeddings | `all-MiniLM-L6-v2` (local, 80MB) |
-| RAG framework | LangChain |
-| API | FastAPI |
-| Demo UI | Gradio |
-| Voice input | OpenAI Whisper (small model) |
-| Translation | IndicTrans2 |
-| Local inference | Ollama |
+| Component | Tool |
+|---|---|
+| Base Model | `unsloth/gemma-3-4b-it-unsloth-bnb-4bit` |
+| Fine-tuning | Unsloth + PEFT (LoRA, r=16) + TRL SFTTrainer |
+| Quantisation | bitsandbytes 4-bit |
+| Vector Store | ChromaDB (persistent, local) |
+| Embeddings | `all-MiniLM-L6-v2` (SentenceTransformers) |
+| ASR | OpenAI Whisper (`base`, offline) |
+| OCR | Tesseract (multi-script: eng + Indian scripts) |
+| Translation | IndicTrans2 (offline) / `deep_translator` (fallback) |
+| TTS | gTTS |
+| UI | Gradio (`gr.Blocks`) |
+| Evaluation | scikit-learn (precision, recall, F1) |
 
 ---
 
-## 🤗 Model Weights
+## ⚙️ Installation & Setup
 
-Fine-tuned adapter weights are published on HuggingFace:
+### Prerequisites
+- Python 3.10+
+- CUDA-enabled GPU (T4 or better recommended)
+- Google Colab (recommended for first run)
 
-```python
-from unsloth import FastLanguageModel
+### Quick Start (Google Colab)
 
-model, tokenizer = FastLanguageModel.from_pretrained(
-    "YOUR_HF_USERNAME/asha-ai-gemma4-e4b",
-    max_seq_length=2048,
-    load_in_4bit=True,
-)
+**Step 1 — Install dependencies**
+```bash
+pip install -q unsloth transformers accelerate peft datasets trl bitsandbytes
+pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git" -q
+pip install chromadb sentence-transformers langchain langchain-community -q
+pip install gradio scikit-learn pymupdf gtts openai-whisper pytesseract -q
+```
+
+**Step 2 — Run the notebook**
+
+Open `asha_ai.py` in Google Colab and run cells sequentially:
+
+1. **Cell 1** — Install packages
+2. **Cell 2** — Build training dataset (IMNCI Q&A pairs)
+3. **Cell 3** — Load Gemma 3 4B + add LoRA adapters
+4. **Cell 4** — Fine-tune with SFTTrainer (~60–90 min on T4)
+5. **Cell 5** — Build ChromaDB knowledge base
+6. **Cell 6** — RAG inference tests
+7. **Cell 7** — Run evaluation on 15 triage scenarios
+8. **Cell 8** — Setup TTS, ASR, OCR, translation
+9. **Cell 10** — Launch Gradio demo
+
+> 💡 **After fine-tuning completes**, the LoRA adapter is saved to `./asha_ai_adapter/`. Subsequent runs can load directly from this path.
+
+---
+
+## 🖥️ Gradio Interface
+
+The app launches with three tabs:
+
+### Tab 1 — Text Triage
+Enter symptoms in any language → receive numbered step-by-step triage guidance + audio playback.
+
+### Tab 2 — Voice Triage
+Record symptoms in any of 12 languages → auto-transcribed by Whisper → response returned in chosen output language with audio.
+
+### Tab 3 — Medicine Image
+Upload a photo of a medicine label → OCR extracts text → Gemma explains dosage, uses, and safety warnings in the worker's language.
+
+---
+
+## 📊 Evaluation Results
+
+Evaluated on **15 real-world triage scenarios** (10 REFER, 5 HOME) using keyword-based classification:
+
+| Metric | Score |
+|---|---|
+| Overall Accuracy | ≥ 86% |
+| REFER Precision | High |
+| **REFER Recall** | **~100%** ← Primary safety metric |
+| REFER F1 | High |
+
+> **Why REFER recall is the key metric:** A missed referral (false HOME) can cost a patient's life. The system is intentionally conservative — it is better to over-refer than to miss a critical case.
+
+Results are saved to `data/eval_results.json` for use in the hackathon submission writeup.
+
+---
+
+## 🗺️ Project Structure
+
+```
+asha-ai/
+├── asha_ai.py               # Main notebook (all cells)
+├── data/
+│   ├── train.jsonl          # Fine-tuning dataset (20 × 10 examples)
+│   ├── eval.jsonl           # Evaluation split
+│   ├── chroma_db/           # Persistent ChromaDB vector store
+│   └── eval_results.json    # Triage evaluation metrics
+├── asha_ai_adapter/         # Saved LoRA adapter (post fine-tuning)
+│   ├── adapter_config.json
+│   └── adapter_model.safetensors
+└── README.md
 ```
 
 ---
 
-## 🚀 API Usage
+## 🏆 Hackathon Tracks Targeted
 
-```python
-import requests
+This project is submitted to the **Gemma 4 Impact Challenge** targeting:
 
-# Triage query (English)
-response = requests.post("http://localhost:8000/triage", json={
-    "query": "A 2-year-old has fever for 3 days with very fast breathing and chest in-drawing",
-    "language": "en"
-})
-print(response.json())
-# {
-#   "answer": "This child has SEVERE PNEUMONIA — a medical emergency...",
-#   "sources": ["IMNCI - Pneumonia Classification"],
-#   "confidence": "refer_immediately"
-# }
-
-# Medicine check (image)
-import base64
-with open("medicine_label.jpg", "rb") as f:
-    img_b64 = base64.b64encode(f.read()).decode()
-
-response = requests.post("http://localhost:8000/medcheck", json={
-    "image_base64": img_b64,
-    "question": "What is this medicine and what is the correct dose for a 5-year-old?"
-})
-```
+- 🏥 **Health & Sciences** — clinical AI for underserved populations
+- 🌍 **Digital Equity** — offline-first, multilingual access for rural India
+- ⚡ **Unsloth Special Track** — efficient fine-tuning with Unsloth + 4-bit quantisation
+- 🦙 **Ollama Special Track** — deployable via Ollama for fully local inference
 
 ---
 
-## 🌍 Impact Potential
+## 🔒 Ethical Considerations
 
-- **1,006,938** ASHA workers in India
-- **640,000+** villages they serve
-- **70%** of India's disease burden in rural areas where they work
-- **0** AI tools currently designed for ASHA workers
-- Target: Deploy on low-cost Android phones (₹5,000 range) with 4GB RAM
+- ASHA-AI is a **decision-support tool**, not a replacement for medical professionals.
+- All responses instruct workers to refer when uncertain — the system defaults to patient safety.
+- No patient data is stored. All inference runs locally.
+- Training data is based on publicly available IMNCI protocols and ASHA training manuals from the Government of India.
+
+---
+
+## 🚀 Future Roadmap
+
+- [ ] Quantise and package as an Ollama model for fully local deployment on Android devices
+- [ ] Expand training dataset with more disease conditions and rare presentations
+- [ ] Add ASHA dashboard for logging case referrals
+- [ ] Integrate with ABHA health ID for longitudinal patient tracking
+- [ ] Community fine-tuning with anonymised real ASHA worker queries
+
+---
+
+## 👩‍💻 About the Author
+
+**Kshama** — Final-year B.E. student in AI & Data Science, Karnataka  
+Oracle OCI GenAI & DevOps Certified | Data Science Intern @ Take It Smart Pvt. Ltd.  
+Passionate about building AI systems that solve real problems for real people.
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat&logo=linkedin)](https://linkedin.com)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=flat&logo=github)](https://github.com)
 
 ---
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
+This project is released under the **MIT License**. See `LICENSE` for details.
 
-Model weights follow [Gemma Terms of Use](https://ai.google.dev/gemma/terms).
-
----
-
-## 👩‍💻 About the Developer
-
-Built for the **Gemma 4 Impact Challenge** by a final-year AI & Data Science student passionate about using AI for social good in India.
-
-**Skills demonstrated in this project:**
-- LLM fine-tuning (Unsloth, LoRA, PEFT)
-- RAG pipeline design (ChromaDB, LangChain)
-- Edge AI deployment (Gemma E4B, Ollama)
-- Clinical AI evaluation (precision, recall, F1)
-- Multilingual NLP (Kannada, IndicTrans2, Whisper)
-- FastAPI + Gradio deployment
+The Gemma model is subject to [Google's Gemma Terms of Use](https://ai.google.dev/gemma/terms).
 
 ---
 
-<div align="center">
-  <strong>If this project helped you, please ⭐ the repo!</strong><br>
-  Built with ❤️ for India's frontline health workers
-</div>
+<p align="center">
+  Built with ❤️ for India's frontline health heroes — the ASHA workers.
+</p>
