@@ -1,29 +1,37 @@
+"""Local Ollama service used only for explanation and conversational support."""
+
+import os
+from typing import Optional
+
 import ollama
 
-def ask_ai(prompt):
+MODEL_NAME = os.getenv("ASHA_AI_MODEL", "phi3")
 
-    system_prompt = """
-    You are ASHA AI.
+SYSTEM_PROMPT = """You are ASHA AI, an offline healthcare support assistant.
 
-    You are an offline healthcare assistant.
+Your role is to explain information clearly and help users understand the
+preliminary triage result produced by a deterministic safety engine.
 
-    Give simple healthcare guidance.
+Rules:
+- Never claim to diagnose a disease.
+- Never override a CRITICAL or HIGH risk triage result.
+- For emergency symptoms, advise immediate professional/emergency care.
+- Do not recommend prescription medicines or unsafe treatment changes.
+- Keep responses concise, calm, and easy to understand.
+- Clearly state that the assistant is not a substitute for a clinician.
+"""
 
-    Recommend visiting doctor for serious symptoms.
-    """
+
+def ask_ai(prompt: str, model: Optional[str] = None) -> str:
+    """Generate a local response through Ollama."""
+    if not prompt or not prompt.strip():
+        return "Please describe your symptoms or ask a healthcare question."
 
     response = ollama.chat(
-        model="phi3",
+        model=model or MODEL_NAME,
         messages=[
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt.strip()},
+        ],
     )
-
-    return response["message"]["content"]
+    return response["message"]["content"].strip()
