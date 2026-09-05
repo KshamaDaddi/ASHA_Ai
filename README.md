@@ -1,156 +1,205 @@
-# ASHA AI — Offline Healthcare Support Assistant
+# 🩺 ASHA AI Guardian
 
-ASHA AI is a safety-first healthcare support application that combines deterministic preliminary triage with a locally hosted LLM through Ollama. It also provides multilingual input, medical-report OCR, voice interaction, and patient-history storage.
+**Offline, multilingual healthcare support assistant built with Python, Streamlit, Ollama, OCR, voice interaction, and a deterministic safety-first triage engine.**
 
-> **Safety notice:** ASHA AI is a preliminary screening and information-support tool. It is not a medical diagnostic system and must not replace a qualified healthcare professional or emergency service.
+> ⚠️ **Safety notice:** ASHA AI is a preliminary screening and information-support tool. It is not a diagnostic system and must not replace a qualified healthcare professional or emergency service.
 
-## Architecture
+## What it does
+
+ASHA AI accepts patient symptoms by text or voice, optionally reads a medical-report image with OCR, performs a deterministic preliminary risk assessment, stores a local patient history, and uses a locally hosted Ollama model to explain the result.
+
+### Safety architecture
+
+The LLM does **not** decide the emergency level. The deterministic triage engine makes the risk assessment first; Ollama is used only for explanation and conversational support.
 
 ```text
-Streamlit UI
-    |
-    v
-FastAPI REST API
-    |
-    +--> Triage Service --------> deterministic risk score
-    |
-    +--> Ollama Service --------> local LLM explanation
-    |
-    +--> OCR / Translation / Voice services
-    |
-    v
-SQLite (local application data)
+Patient
+  │
+  ├── Text symptoms
+  ├── Voice input
+  └── Medical report image
+          │
+          ▼
+   Input normalization
+          │
+          ├── Translation
+          └── OCR
+          │
+          ▼
+  Deterministic Triage Engine
+          │
+          ├── Symptom weights
+          ├── Age adjustment
+          ├── Combination rules
+          └── Negation handling
+          │
+          ▼
+   Risk Classification
+          │
+          ├── Critical Emergency
+          ├── High Risk
+          ├── Moderate Risk
+          └── Low Risk
+          │
+          ▼
+       Ollama LLM
+   explanation / guidance
+          │
+          ▼
+     Streamlit Dashboard
+          │
+          ▼
+      Local SQLite DB
 ```
 
-## Core design
+## Key features
 
-The application separates **risk assessment** from **LLM generation**. The deterministic triage service makes the preliminary risk decision; the local LLM is used for conversational explanation and general guidance. This prevents an LLM response from silently overriding an emergency rule.
-
-## Features
-
-- Safety-first rule-based preliminary triage
-- Negation-aware symptom matching for common phrases such as "I don't have chest pain"
-- Age-based risk adjustments
-- Combination-symptom escalation rules
-- Local Ollama LLM support
-- FastAPI REST API with Pydantic validation
-- Streamlit interface
-- Multilingual input support
-- Medical-report OCR
-- Voice input and text-to-speech
-- Local SQLite patient history
-- Automated triage unit tests
-
-## API
-
-Start the backend:
-
-```bash
-cd backend
-uvicorn app.main:app --reload
-```
-
-Then open FastAPI documentation at `http://127.0.0.1:8000/docs`.
-
-### Health
-
-`GET /health`
-
-```json
-{"status": "healthy"}
-```
-
-### Triage
-
-`POST /api/v1/triage`
-
-```json
-{
-  "symptoms": "chest pain and breathing difficulty",
-  "age": 45
-}
-```
-
-Example response:
-
-```json
-{
-  "risk_level": "CRITICAL EMERGENCY",
-  "risk_score": 15,
-  "detected_symptoms": ["chest pain", "breathing difficulty"],
-  "recommendation": "Seek emergency medical care immediately."
-}
-```
-
-### Chat
-
-`POST /api/v1/chat`
-
-```json
-{"message": "What should I do for a mild cough?"}
-```
-
-The chat endpoint uses the configured local Ollama model. Set `ASHA_AI_MODEL` to change the model; the default is `phi3`.
-
-## Installation
-
-Create and activate a virtual environment, then install dependencies:
-
-```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# Linux/macOS
-# source .venv/bin/activate
-
-pip install -r backend/requirements.txt
-```
-
-Install and start Ollama separately, then make sure the configured model is available locally.
-
-Run tests:
-
-```bash
-pytest backend/tests -q
-```
+- 🔴 Safety-first deterministic triage
+- 🧠 Local LLM through Ollama
+- 🌐 English, Kannada, and Hindi support
+- 🖼 Medical-report OCR with EasyOCR
+- 🎤 Voice symptom input
+- 🔊 Text-to-speech response
+- 👤 Local patient history
+- 📊 Risk analytics dashboard
+- 🛡️ Negation-aware symptom detection
+- 🧪 Reproducible Python dependencies
+- 🔐 Local-first data storage
 
 ## Project structure
 
 ```text
 ASHA_Ai/
-├── backend/
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── routes/
-│   │   │   ├── chat.py
-│   │   │   └── triage.py
-│   │   └── services/
-│   │       ├── ollama_service.py
-│   │       └── triage_service.py
-│   ├── tests/
-│   │   └── test_triage.py
-│   ├── streamlit_app.py
-│   ├── translator.py
-│   └── voice_assistant.py
-├── .gitignore
+├── main.py             # Complete application
+├── requirements.txt    # Python dependencies
 ├── README.md
-└── LICENSE
+├── LICENSE
+└── .gitignore
 ```
 
-## Triage limitations
+The application has intentionally been consolidated into **one `main.py`** so it is easy to understand, run, demonstrate, and submit as a portfolio project.
 
-The current engine is intentionally a lightweight preliminary screening layer based on a curated symptom-weight table. It does not diagnose conditions, understand every medical phrase, or replace clinical assessment. Emergency decisions should be confirmed by appropriate healthcare services.
+## Installation
 
-## Roadmap
+### 1. Clone the repository
 
-- Move all Streamlit business logic behind FastAPI
-- Add OCR and translation service endpoints
-- Add patient API with proper schemas and validation
-- Add authentication and audit logging before any real patient deployment
-- Expand automated safety and API tests
-- Add structured logging and monitoring
-- Add a proper evaluation dataset for triage behavior
-- Add containerized deployment
+```bash
+git clone https://github.com/KshamaDaddi/ASHA_Ai.git
+cd ASHA_Ai
+```
+
+### 2. Create a virtual environment
+
+Windows:
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+Linux/macOS:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Install Ollama
+
+Install Ollama separately and pull a small local model, for example:
+
+```bash
+ollama pull phi3
+```
+
+If you use another installed model, set:
+
+```text
+ASHA_AI_MODEL=your-model-name
+```
+
+### 5. Run ASHA AI
+
+```bash
+streamlit run main.py
+```
+
+The Streamlit application will provide the local URL in the terminal.
+
+## Example output
+
+Input:
+
+```text
+Patient age: 45
+Symptoms: chest pain and breathing difficulty
+```
+
+Triage output:
+
+```text
+🔴 CRITICAL EMERGENCY
+
+Risk score: 15
+Detected symptoms: chest pain, breathing difficulty
+Recommendation: Seek emergency medical care immediately.
+```
+
+The application then sends the symptoms **together with the deterministic triage result** to Ollama for a concise explanation. The LLM cannot downgrade the emergency classification.
+
+## Risk engine
+
+The current preliminary scoring layer uses curated symptom weights and escalation rules.
+
+| Risk | Score | Action |
+|---|---:|---|
+| Critical Emergency | ≥ 10 | Seek emergency medical care immediately |
+| High Risk | 6–9 | Seek urgent medical evaluation |
+| Moderate Risk | 3–5 | Monitor and seek medical advice |
+| Low Risk | 0–2 | Basic precautions; seek advice if symptoms worsen |
+
+This is a **screening heuristic**, not a clinically validated medical scoring system.
+
+## Why use an LLM + rules?
+
+A general-purpose LLM is useful for natural-language explanations, but it should not be the sole authority for safety-critical classification. ASHA AI therefore follows:
+
+**Rules → Risk decision → LLM explanation**
+
+This makes the critical decision path deterministic and easier to test.
+
+## Privacy
+
+Patient data is stored in a local SQLite database created at runtime. Database files are ignored by Git and should never be committed when they contain real patient information.
+
+Do not use this prototype with real patient data without appropriate security, privacy, authentication, access control, audit logging, encryption, clinical validation, and regulatory review.
+
+## Limitations
+
+- Symptom coverage is intentionally limited.
+- The triage engine is not clinically validated.
+- OCR quality depends on image quality.
+- Voice recognition depends on the local environment and speech-recognition service.
+- Translation may fail or produce imperfect wording.
+- Ollama must be installed and the selected model must be available locally.
+- The application must not be treated as a medical diagnosis or emergency service.
+
+## Future improvements
+
+1. Add a validated clinical evaluation dataset.
+2. Add structured symptom extraction with better medical NLP.
+3. Add more robust negation and uncertainty detection.
+4. Add automated API/UI tests.
+5. Add encrypted storage and authentication for any controlled deployment.
+6. Add model evaluation metrics and safety benchmarks.
+7. Add Docker and CI/CD.
+8. Add clinician-reviewed emergency protocols.
 
 ## License
 
