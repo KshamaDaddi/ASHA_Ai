@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 
 from app.routes.chat import router as chat_router
+from app.routes.triage import router as triage_router
 
 app = FastAPI(
     title="ASHA AI",
@@ -11,6 +12,7 @@ app = FastAPI(
 )
 
 app.include_router(chat_router)
+app.include_router(triage_router)
 
 
 @app.get("/", tags=["health"])
