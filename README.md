@@ -1,101 +1,116 @@
 # 🩺 ASHA AI Guardian
 
-**Local-first healthcare decision-support prototype with deterministic triage, local LLM explanation, OCR, multilingual input, voice support, SQLite history, and Streamlit dashboard.**
+**A local-first healthcare decision-support prototype combining deterministic preliminary triage, a local Ollama LLM, OCR, multilingual interaction, voice support, SQLite history, and a Streamlit dashboard.**
 
-> ⚠️ **Safety:** ASHA AI Guardian is a software prototype for preliminary decision support. It is **not a diagnostic system**, is not clinically validated, and must not replace a qualified healthcare professional or emergency services.
+> ⚠️ **Safety:** This is a software prototype for preliminary decision support. It is **not a diagnostic system**, is not clinically validated, and must not replace a qualified healthcare professional or emergency services.
 
 ## 🎯 Problem
 
-Community and frontline healthcare workflows may involve incomplete symptom descriptions, language barriers, handwritten/printed reports, and limited access to advanced software. ASHA AI Guardian demonstrates how these inputs can be combined into one explainable workflow while keeping safety-critical risk classification deterministic.
+Frontline/community healthcare workflows can involve incomplete symptom descriptions, language barriers, voice input, and information contained in uploaded reports. ASHA AI Guardian demonstrates how these inputs can be combined into one explainable workflow while keeping the safety-sensitive risk decision deterministic.
 
 ## 🧠 What I Built
 
-The application accepts patient information through:
+The application accepts:
 
-- Text-based symptom descriptions
+- Typed symptom descriptions
 - Quick symptom selection
 - Voice input
-- Uploaded report images using OCR
-- English, Kannada, and Hindi input/output translation
+- Uploaded report images using EasyOCR
+- English, Kannada, and Hindi interaction
 
-The system then:
+The workflow is:
 
-1. Normalizes the symptom information.
-2. Translates non-English user input to English for the triage engine.
-3. Runs a deterministic weighted triage algorithm.
-4. Applies age-based and high-risk combination rules.
-5. Produces **LOW, MODERATE, HIGH, or CRITICAL** risk classification.
-6. Sends the triage result to a local Ollama LLM for a simple explanation.
-7. Prevents the LLM from becoming the safety authority.
-8. Stores assessment history in SQLite.
-9. Generates a downloadable assessment report.
+```text
+Patient Input
+   │
+   ├── Text ──────────────┐
+   ├── Voice → STT ───────┤
+   └── Report → OCR ──────┤
+                          ▼
+                   Translation
+                          │
+                          ▼
+                 Deterministic Triage
+                          │
+                          ▼
+                  Risk Classification
+                          │
+                ┌─────────┴─────────┐
+                ▼                   ▼
+           Safety Result       Ollama LLM
+                                    │
+                              Explanation only
+                └─────────┬─────────┘
+                          ▼
+                   Streamlit UI
+                    ┌─────┴─────┐
+                    ▼           ▼
+                 SQLite      Report
+                 History     Download
+```
+
+### Core design principle
+
+```text
+Deterministic Triage  →  SAFETY AUTHORITY
+Ollama LLM            →  EXPLANATION ONLY
+```
+
+The LLM receives the deterministic result as context and is instructed not to diagnose, prescribe medicines, or downgrade HIGH/CRITICAL cases.
+
+---
 
 ## 🏗️ Architecture
 
+The project uses a modular service-oriented structure instead of putting all logic into `main.py`.
+
 ```text
-                         USER
-                           │
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-        Text             Voice            Image
-          │                │                │
-          │          Voice Service          OCR
-          │                │                │
-          └────────────────┼────────────────┘
-                           ▼
-                    Translation Layer
-                           │
-                           ▼
-                  Deterministic Triage
-                           │
-                 ┌─────────┴─────────┐
-                 ▼                   ▼
-          Risk Classification    Risk Context
-                 │                   │
-                 │                Ollama
-                 │             Explanation only
-                 └─────────┬─────────┘
-                           ▼
-                    Streamlit Dashboard
-                           │
-                    ┌──────┴──────┐
-                    ▼             ▼
-                 SQLite        Report
-                 History       Download
+                         Streamlit UI
+                              │
+          ┌───────────────────┼───────────────────┐
+          ▼                   ▼                   ▼
+        Voice                 OCR                Text
+          │                   │                   │
+          └───────────────────┼───────────────────┘
+                              ▼
+                    Translation Service
+                              │
+                              ▼
+                     Triage Engine
+                              │
+                              ▼
+                       Risk Result
+                         │         │
+                         │         ▼
+                         │    Ollama Service
+                         │    Explanation
+                         │         │
+                         └────┬────┘
+                              ▼
+                       Report Service
+                              │
+                              ▼
+                       SQLite Database
 ```
 
-### Safety design
-
-The most important architectural decision is the separation between **decision** and **explanation**:
-
-> **Deterministic triage = safety authority**  
-> **Ollama LLM = explanation layer**
-
-The LLM receives the deterministic result as context and is explicitly instructed not to downgrade or contradict HIGH/CRITICAL cases. This reduces the risk of relying on generative output for a safety-critical classification.
-
-## 📁 Project Structure
+### Project structure
 
 ```text
 ASHA_Ai/
-├── main.py                         # Streamlit entry point
+├── main.py                         # Application entry point
 ├── app/
-│   ├── __init__.py
 │   ├── services/
-│   │   ├── __init__.py
 │   │   ├── triage_engine.py        # Deterministic risk engine
 │   │   ├── ollama_service.py       # Local LLM integration
 │   │   ├── ocr_service.py          # EasyOCR adapter
 │   │   ├── translation_service.py  # Translation adapter
-│   │   ├── voice_service.py        # Speech-to-text / TTS
+│   │   ├── voice_service.py        # STT / TTS
 │   │   └── report_service.py       # Report generation
 │   ├── database/
-│   │   ├── __init__.py
 │   │   └── database.py             # SQLite persistence
 │   └── ui/
-│       ├── __init__.py
-│       └── dashboard.py             # Streamlit UI + orchestration
+│       └── dashboard.py             # Streamlit UI/orchestration
 ├── tests/
-│   ├── __init__.py
 │   └── test_triage.py              # Triage unit tests
 ├── requirements.txt
 ├── .gitignore
@@ -103,81 +118,209 @@ ASHA_Ai/
 └── README.md
 ```
 
-This structure keeps `main.py` intentionally small and makes each technical responsibility easy to understand, test, and explain in an interview.
+| Module | Responsibility |
+|---|---|
+| `main.py` | Starts the application |
+| `triage_engine.py` | Risk scoring and classification |
+| `ollama_service.py` | Local LLM explanation |
+| `ocr_service.py` | Report image text extraction |
+| `translation_service.py` | Language translation |
+| `voice_service.py` | Speech-to-text and text-to-speech |
+| `report_service.py` | Downloadable report creation |
+| `database.py` | Local assessment history |
+| `dashboard.py` | UI and workflow orchestration |
+| `test_triage.py` | Automated tests |
 
-## 🔬 Triage Engine
+---
 
-The triage engine is rule-based and explainable. Symptoms have predefined weights, for example:
+## 🔬 Deterministic Triage Engine
 
-| Signal | Weight |
+The triage engine is rule-based, deterministic, and explainable. Prototype symptom weights include:
+
+| Symptom / Signal | Weight |
 |---|---:|
-| Chest pain | 5 |
 | Breathing difficulty | 5 |
 | Shortness of breath | 5 |
 | Heavy bleeding | 5 |
+| Chest pain | 5 |
 | Unconscious | 5 |
 | Seizure | 5 |
 | High fever | 3 |
 | Dehydration | 3 |
 | Vomiting | 2 |
+| Dizziness | 2 |
 | Weakness | 2 |
+| Fever | 2 |
 | Headache | 1 |
 | Cough | 1 |
 
-Additional rules account for age and symptom combinations. The engine also uses **longest-first phrase matching and span masking**, so `high fever` is not accidentally counted as both `high fever` and `fever`.
-
-Basic negation patterns such as `no chest pain` and `I don't have chest pain` are also handled.
+Additional escalation rules consider patient age and combinations such as chest pain + breathing difficulty, high fever + dehydration, and vomiting + weakness.
 
 ### Risk thresholds
 
 ```text
-score >= 10  → CRITICAL EMERGENCY
-score >= 6   → HIGH RISK
-score >= 3   → MODERATE RISK
-otherwise    → LOW RISK
+Score >= 10  → CRITICAL EMERGENCY
+Score >= 6   → HIGH RISK
+Score >= 3   → MODERATE RISK
+Score < 3    → LOW RISK
 ```
 
-These are prototype engineering rules, **not clinical guidelines**.
+These are **prototype engineering rules, not clinical guidelines**.
+
+### Robustness improvements
+
+- Longest-first phrase matching
+- Span-overlap prevention so `high fever` is not double-counted as `high fever` + `fever`
+- Basic negation detection such as `no chest pain`
+- Age-based escalation
+- High-risk symptom-combination rules
+- Structured `TriageResult` returned by the engine
+
+---
 
 ## 🤖 Generative AI
 
-Ollama runs a local model such as `phi3`. The model is used for natural-language explanation, not diagnosis.
+Ollama runs a local LLM such as `phi3`.
 
-The prompt provides:
+The model receives:
 
 - Patient symptom text
 - Deterministic risk level
-- Deterministic risk score
+- Risk score
 - Detected symptoms
 - Safety recommendation
 
-The system prompt explicitly states that the deterministic result is the safety authority and that the model must not prescribe medicines or downgrade HIGH/CRITICAL risk.
+It generates a concise explanation for the user.
+
+### Why separate the LLM from triage?
+
+LLMs are probabilistic. For a safety-sensitive workflow, the application needs a predictable and testable decision boundary. Therefore:
+
+```text
+Rules → Decide
+LLM   → Explain
+```
+
+The LLM cannot become the safety authority.
+
+---
+
+## 🌐 Multilingual Support
+
+Supported languages:
+
+- English
+- Kannada
+- Hindi
+
+The intended flow is:
+
+```text
+User Language
+      ↓
+Translation to English
+      ↓
+Triage Processing
+      ↓
+Ollama Explanation
+      ↓
+Translation to Response Language
+```
+
+Translation is isolated as a service so it can later be replaced by another model or provider.
+
+---
+
+## 🖼️ OCR
+
+Uploaded report images are processed with EasyOCR:
+
+```text
+Report Image → EasyOCR → Extracted Text → Assessment Workflow
+```
+
+Current OCR processing focuses on English text. OCR output is extracted text and should not be treated as verified clinical information.
+
+---
+
+## 🎙️ Voice
+
+The voice layer uses:
+
+- `SpeechRecognition` for speech-to-text
+- Google speech recognition for recognition
+- `pyttsx3` for local text-to-speech
+
+```text
+Microphone → Speech Recognition → Text → Triage → Explanation → TTS
+```
+
+Speech recognition may require internet access.
+
+---
+
+## 💾 SQLite History
+
+The application stores local assessment history containing:
+
+- Patient name
+- Age
+- Symptoms
+- Risk level
+- Risk score
+- Recommendation
+- Timestamp
+
+`asha_ai.db` is ignored by Git and should not be committed.
+
+---
+
+## 📊 Dashboard
+
+The Streamlit dashboard provides:
+
+- Patient information input
+- Quick symptom selection
+- Voice input
+- Report upload and OCR
+- Multilingual interaction
+- Risk classification
+- Risk distribution visualization
+- Local LLM explanation
+- Text-to-speech
+- Assessment history
+- Downloadable reports
+
+---
 
 ## 🛠️ Technology Stack
 
 | Technology | Purpose |
 |---|---|
 | Python | Core application logic |
-| Streamlit | Interactive dashboard |
+| Streamlit | UI and dashboard |
 | Ollama | Local LLM inference |
-| EasyOCR | Text extraction from report images |
-| deep-translator | Multilingual translation |
-| SpeechRecognition | Voice-to-text |
-| pyttsx3 | Local text-to-speech |
-| SQLite | Local assessment history |
-| Pandas | Dashboard data handling |
-| Pytest | Automated tests |
+| EasyOCR | OCR |
+| deep-translator | Translation |
+| SpeechRecognition | Speech-to-text |
+| pyttsx3 | Text-to-speech |
+| SQLite | Local persistence |
+| Pandas | Dashboard data |
+| NumPy | Image/OCR processing |
+| Pytest | Unit testing |
+
+---
 
 ## 🚀 Setup
 
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/KshamaDaddi/ASHA_Ai.git
 cd ASHA_Ai
 ```
 
-### 2. Create a virtual environment
+### 2. Create environment
 
 Windows:
 
@@ -186,15 +329,22 @@ python -m venv .venv
 .venv\Scripts\activate
 ```
 
+macOS/Linux:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
 ### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Install Ollama
+### 4. Configure Ollama
 
-Install Ollama separately and make sure it is running. Then pull the model configured by the application:
+Install Ollama and pull the default model:
 
 ```bash
 ollama pull phi3
@@ -202,66 +352,152 @@ ollama pull phi3
 
 To use another installed model:
 
+Windows CMD:
+
 ```bash
 set ASHA_AI_MODEL=<model-name>
 ```
 
-### 5. Run the application
+PowerShell:
+
+```powershell
+$env:ASHA_AI_MODEL="<model-name>"
+```
+
+macOS/Linux:
+
+```bash
+export ASHA_AI_MODEL=<model-name>
+```
+
+### 5. Run
 
 ```bash
 streamlit run main.py
 ```
 
-## 🧪 Run Tests
+---
+
+## 🧪 Testing
 
 ```bash
 pytest -q
 ```
 
-The tests focus on the safety-critical deterministic layer, including emergency combinations, negation, age adjustments, overlapping symptom phrases, and low-risk cases.
+Tests focus on the deterministic safety layer, including:
 
-## 🔐 Data and Privacy
+- Emergency combinations
+- Negated symptoms
+- Overlapping symptom phrases
+- Age escalation
+- Child-specific escalation
+- Low-risk classification
 
-Assessment history is stored locally in `asha_ai.db`. The database file is ignored by Git and should not be committed to the repository.
+Because the triage engine is separated from Streamlit, it can be tested independently.
 
-The application is **local-first**, not fully offline: translation and Google speech recognition may require internet access. OCR and text-to-speech are designed to run locally.
+---
 
-## ⚠️ Current Limitations
+## 🔐 Privacy and Data Handling
 
-- Rule-based triage is not a medical diagnostic model.
-- Thresholds and weights are prototype engineering choices, not clinical recommendations.
-- No clinical validation or prospective evaluation has been performed.
-- OCR currently targets English text.
-- Voice recognition depends on the configured speech-recognition provider.
-- Translation uses an external translation service and may require internet access.
-- The local LLM's explanation quality depends on the installed Ollama model.
-- Symptom keyword matching cannot replace clinical reasoning or examination.
+ASHA AI Guardian is **local-first, not fully offline**.
+
+Local components include Ollama inference, SQLite storage, OCR, and text-to-speech. Translation and Google speech recognition may require internet access.
+
+Do not use real patient data with this prototype unless appropriate privacy, security, consent, and organizational requirements have been addressed.
+
+---
+
+## ⚠️ Limitations
+
+- The triage engine is not a medical diagnostic model.
+- Weights and thresholds are prototype engineering choices.
+- No clinical validation has been performed.
+- Keyword matching cannot replace clinical reasoning or examination.
+- Basic negation handling does not cover every linguistic context.
+- OCR may produce incorrect text.
+- Current OCR focuses on English.
+- Translation and speech recognition may introduce errors.
+- LLM explanations can still be imperfect.
+
+---
 
 ## 🔮 Future Improvements
 
-1. Replace keyword rules with a validated clinical risk model after obtaining appropriate datasets and clinical oversight.
-2. Add structured symptom entities and better negation/context detection.
-3. Add multilingual OCR.
-4. Add model evaluation with precision, recall, F1, sensitivity, and specificity.
-5. Add audit logs and stronger privacy controls.
-6. Add automated CI testing with GitHub Actions.
-7. Add model/version tracking for reproducibility.
-8. Add role-based access if deployed in a real organization.
+### AI / ML
+
+- Replace prototype rules with a clinically validated risk model.
+- Add structured symptom/entity extraction.
+- Improve negation and context detection.
+- Evaluate models using precision, recall, F1, sensitivity, and specificity.
+- Add model/version tracking.
+
+### Generative AI
+
+- Structured LLM output.
+- Hallucination evaluation.
+- RAG using trusted medical sources.
+- Stronger safety guardrails.
+- Automated LLM evaluation.
+
+### Engineering
+
+- GitHub Actions CI.
+- Structured logging.
+- Integration tests.
+- Docker support.
+- Stronger privacy/security controls.
+- Production monitoring.
+
+### Product
+
+- Multilingual OCR.
+- Accessibility improvements.
+- Authentication and role-based access.
+- Human-in-the-loop review for high-risk workflows.
+
+---
 
 ## 💬 Interview Explanation
 
-> “ASHA AI Guardian is a local-first healthcare decision-support prototype. I designed it around a safety-first architecture where deterministic triage performs the risk classification and a local Ollama LLM is used only to explain the result. The application accepts text, voice, and report images, supports multilingual input, stores assessment history in SQLite, and provides a Streamlit dashboard. I separated the system into services for triage, LLM integration, OCR, translation, voice, reporting, and persistence so each component can be tested and maintained independently.”
+### 30-second answer
 
-### Key engineering point
+> “ASHA AI Guardian is a local-first healthcare decision-support prototype. It accepts symptoms through text, voice, and report images, supports multilingual interaction, and performs preliminary risk classification using a deterministic triage engine. I integrated a local Ollama LLM to explain the result, but I deliberately did not let the LLM make the safety-critical decision. Assessment history is stored in SQLite and the application is presented through Streamlit.”
 
-If asked **“Why not let the LLM decide the risk?”**, explain:
+### Technical answer
 
-> “LLMs are probabilistic. For a safety-sensitive workflow, I wanted a deterministic and explainable layer to own the classification. The LLM is therefore constrained to explanation, while the application retains control over the safety decision.”
+> “I designed the application using a modular service-oriented architecture. The UI handles interaction while separate services handle triage, OCR, translation, voice, reporting, persistence, and LLM inference. The triage engine assigns symptom weights, applies age and combination rules, handles basic negation, and returns a structured TriageResult. That result is passed to Ollama as context for explanation. This keeps the probabilistic LLM separate from the safety authority.”
 
-## 📌 Resume-Ready Project Summary
+### Why not let the LLM decide?
+
+> “An LLM is probabilistic and can produce inconsistent outputs. For a safety-sensitive workflow, I wanted the classification logic to be deterministic, explainable, and testable. Therefore, the triage engine owns the risk decision and the LLM is restricted to explanation.”
+
+### Is this a medical AI model?
+
+> “It is a healthcare decision-support prototype, not a clinically validated medical model. The current triage layer uses engineering rules. A production system would require appropriate datasets, clinical validation, regulatory review, privacy controls, and human oversight.”
+
+---
+
+## 📌 Resume-Ready Description
 
 **ASHA AI Guardian — Healthcare Decision-Support Application**
 
-- Built a local-first Streamlit application combining deterministic symptom triage, Ollama LLM explanation, EasyOCR, multilingual translation, voice interaction, and SQLite persistence.
-- Designed a safety-first architecture where a deterministic weighted triage engine owns LOW/MODERATE/HIGH/CRITICAL classification while the local LLM provides explanation only.
-- Implemented phrase-overlap prevention, basic symptom negation handling, age-based escalation, combination rules, automated triage tests, and downloadable assessment reports.
+- Built a local-first Streamlit healthcare decision-support application integrating deterministic symptom triage, local Ollama LLM explanation, EasyOCR, multilingual translation, voice interaction, SQLite persistence, and downloadable reports.
+- Designed a safety-first architecture where deterministic weighted triage owns LOW/MODERATE/HIGH/CRITICAL classification while the local LLM is restricted to natural-language explanation.
+- Implemented symptom phrase-overlap prevention, basic negation handling, age-based escalation, high-risk combination rules, modular services, and automated triage tests.
+
+---
+
+## 👩‍💻 Author
+
+**Kshama Daddi**  
+AI & Data Science | Python | Machine Learning | Generative AI
+
+GitHub: https://github.com/KshamaDaddi
+
+---
+
+## 📄 License
+
+See the `LICENSE` file included in the repository.
+
+> **Project principle:** Build AI systems where the model is useful, but the application remains responsible for critical decision boundaries.
